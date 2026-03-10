@@ -1,4 +1,6 @@
+#include <iostream>
+
 int main()
 {
-  return 0;
+  std::cout << "gordejchik.mikhail" << "\n";
 }
