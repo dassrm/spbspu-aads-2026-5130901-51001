@@ -14,12 +14,9 @@ using Sequences = List< NamedSeq >;
 using Transposed = List< Numbers >;
 
 Sequences readSequences();
-
 void printNames(const Sequences& seqs);
 void printNumbers(const Numbers& nums);
-
 Transposed buildTransposed(const Sequences& seqs);
-
 long long computeSum(const Numbers& nums);
 void printSums(const Transposed& transposed);
 

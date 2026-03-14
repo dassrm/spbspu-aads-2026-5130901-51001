@@ -1,6 +1,5 @@
 #include <iostream>
 #include <climits>
-
 #include "sequences.hpp"
 
 int main()
@@ -29,7 +28,6 @@ int main()
     }
 
     smirnova::printSums(transposed);
-
     return 0;
   } catch (const std::overflow_error&) {
     std::cerr << "error: overflow in sum calculation\n";
