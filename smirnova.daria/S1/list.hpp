@@ -139,6 +139,36 @@ public:
     delete sentinel_;
   }
 
+  iterator begin()
+  {
+    return iterator(sentinel_->next_);
+  }
+
+  iterator end()
+  {
+    return iterator(sentinel_);
+  }
+
+  const_iterator begin() const
+  {
+    return const_iterator(sentinel_->next_);
+  }
+
+  const_iterator end() const
+  {
+    return const_iterator(sentinel_);
+  }
+
+  const_iterator cbegin() const
+  {
+    return begin();
+  }
+
+  const_iterator cend() const
+  {
+    return end();
+  }
+
   bool empty() const
   {
     return size_ == 0;
