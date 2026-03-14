@@ -11,14 +11,14 @@ smirnova::Sequences smirnova::readSequences()
   Sequences seqs;
   std::string name;
   std::string token;
-  
+
   while (std::cin >> name) {
     Numbers nums;
-    
+
     while (std::cin >> token) {
       bool isNumber = true;
       size_t start = (token[0] == '-') ? 1 : 0;
-      
+
       if (start == 1 && token.length() == 1) {
         isNumber = false;
       } else {
@@ -29,29 +29,29 @@ smirnova::Sequences smirnova::readSequences()
           }
         }
       }
-      
+
       if (!isNumber) {
         for (int i = token.length() - 1; i >= 0; --i) {
           std::cin.putback(token[i]);
         }
         break;
       }
-      
+
       char* endptr;
       errno = 0;
       long long num = std::strtoll(token.c_str(), &endptr, 10);
-      
+
       if (errno == ERANGE || *endptr != '\0') {
         throw std::overflow_error("overflow in number reading");
       }
-      
+
       nums.pushBack(num);
     }
-    
+
     if (!std::cin.eof()) {
       std::cin.clear();
     }
-    
+
     seqs.pushBack(std::make_pair(name, std::move(nums)));
   }
   return seqs;
@@ -96,7 +96,7 @@ smirnova::Transposed smirnova::buildTransposed(const smirnova::Sequences& seqs)
     LCIter< NamedSeq > seqIt = seqs.cbegin();
     LIter< LCIter< long long > > iterIt = iters.begin();
     bool hasData = false;
-    
+
     while (seqIt != seqs.cend()) {
       if (*iterIt != seqIt->second.cend()) {
         long long val = **iterIt;
@@ -110,7 +110,7 @@ smirnova::Transposed smirnova::buildTransposed(const smirnova::Sequences& seqs)
       ++seqIt;
       ++iterIt;
     }
-    
+
     if (!hasData) {
       break;
     }
