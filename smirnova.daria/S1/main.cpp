@@ -1,4 +1,5 @@
 #include <iostream>
+#include <climits>
 
 #include "sequences.hpp"
 
@@ -13,20 +14,25 @@ int main()
 
   smirnova::printNames(seqs);
 
-  const smirnova::Transposed transposed = smirnova::buildTransposed(seqs);
+  try {
+    const smirnova::Transposed transposed = smirnova::buildTransposed(seqs);
 
-  if (transposed.empty()) {
-    std::cerr << "error: sum calculation is impossible\n";
+    if (transposed.empty()) {
+      std::cout << '\n' << 0 << '\n';
+      return 0;
+    }
+
+    for (smirnova::LCIter< smirnova::Numbers > it = transposed.cbegin();
+         it != transposed.cend();
+         ++it) {
+      smirnova::printNumbers(*it);
+    }
+
+    smirnova::printSums(transposed);
+  } catch (const std::overflow_error&) {
+    std::cerr << "error: overflow in sum calculation\n";
     return 1;
   }
-
-  for (smirnova::LCIter< smirnova::Numbers > it = transposed.cbegin();
-       it != transposed.cend();
-       ++it) {
-    smirnova::printNumbers(*it);
-  }
-
-  smirnova::printSums(transposed);
 
   return 0;
 }

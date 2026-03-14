@@ -1,7 +1,8 @@
 #include "sequences.hpp"
-
 #include <iostream>
 #include <string>
+#include <climits>
+#include <cstdlib>
 
 smirnova::Sequences smirnova::readSequences()
 {
@@ -79,6 +80,12 @@ long long smirnova::computeSum(const smirnova::Numbers& nums)
 {
   long long sum = 0;
   for (LCIter< long long > it = nums.cbegin(); it != nums.cend(); ++it) {
+    if (*it > 0 && sum > LLONG_MAX - *it) {
+      throw std::overflow_error("overflow in sum calculation");
+    }
+    if (*it < 0 && sum < LLONG_MIN - *it) {
+      throw std::overflow_error("overflow in sum calculation");
+    }
     sum += *it;
   }
   return sum;
@@ -91,7 +98,12 @@ void smirnova::printSums(const smirnova::Transposed& transposed)
     if (!first) {
       std::cout << ' ';
     }
-    std::cout << computeSum(*it);
+    try {
+      std::cout << computeSum(*it);
+    } catch (const std::overflow_error&) {
+      std::cerr << "error: overflow in sum calculation\n";
+      std::exit(1);
+    }
     first = false;
   }
   std::cout << '\n';
