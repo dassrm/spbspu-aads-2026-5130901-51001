@@ -1,3 +1,4 @@
+// list.hpp
 #ifndef SMIRNOVA_LIST_HPP
 #define SMIRNOVA_LIST_HPP
 
@@ -30,6 +31,35 @@ struct node_t: node_base_t {
 };
 
 }
+
+template< class T >
+class List {
+public:
+  List():
+    sentinel_(new detail::node_base_t()),
+    size_(0)
+  {}
+
+  ~List()
+  {
+    clear();
+    delete sentinel_;
+  }
+
+  bool empty() const
+  {
+    return size_ == 0;
+  }
+
+  std::size_t size() const
+  {
+    return size_;
+  }
+
+private:
+  detail::node_base_t* sentinel_;
+  std::size_t size_;
+};
 
 }
 
