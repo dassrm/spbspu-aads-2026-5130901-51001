@@ -12,6 +12,10 @@ smirnova::Sequences smirnova::readSequences()
     Numbers nums;
     long long num = 0;
     while (std::cin >> num) {
+      // Проверка на переполнение при чтении
+      if (num > LLONG_MAX || num < LLONG_MIN) {
+        throw std::overflow_error("overflow in number reading");
+      }
       nums.pushBack(num);
     }
     if (!std::cin.eof()) {
@@ -60,15 +64,24 @@ smirnova::Transposed smirnova::buildTransposed(const smirnova::Sequences& seqs)
     Numbers row;
     LCIter< NamedSeq > seqIt = seqs.cbegin();
     LIter< LCIter< long long > > iterIt = iters.begin();
+    bool hasData = false;
+    
     while (seqIt != seqs.cend()) {
       if (*iterIt != seqIt->second.cend()) {
-        row.pushBack(**iterIt);
+        long long val = **iterIt;
+        // Проверка на переполнение при чтении
+        if (val > LLONG_MAX || val < LLONG_MIN) {
+          throw std::overflow_error("overflow in number reading");
+        }
+        row.pushBack(val);
         ++(*iterIt);
+        hasData = true;
       }
       ++seqIt;
       ++iterIt;
     }
-    if (row.empty()) {
+    
+    if (!hasData) {
       break;
     }
     transposed.pushBack(std::move(row));
@@ -80,6 +93,7 @@ long long smirnova::computeSum(const smirnova::Numbers& nums)
 {
   long long sum = 0;
   for (LCIter< long long > it = nums.cbegin(); it != nums.cend(); ++it) {
+    // Проверка на переполнение при сложении
     if (*it > 0 && sum > LLONG_MAX - *it) {
       throw std::overflow_error("overflow in sum calculation");
     }
@@ -93,6 +107,10 @@ long long smirnova::computeSum(const smirnova::Numbers& nums)
 
 void smirnova::printSums(const smirnova::Transposed& transposed)
 {
+  if (transposed.empty()) {
+    return;
+  }
+
   bool first = true;
   for (LCIter< Numbers > it = transposed.cbegin(); it != transposed.cend(); ++it) {
     if (!first) {

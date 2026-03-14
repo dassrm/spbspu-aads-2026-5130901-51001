@@ -18,7 +18,7 @@ int main()
     const smirnova::Transposed transposed = smirnova::buildTransposed(seqs);
 
     if (transposed.empty()) {
-      std::cout << '\n' << 0 << '\n';
+      std::cout << 0 << '\n';
       return 0;
     }
 
