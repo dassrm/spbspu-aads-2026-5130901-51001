@@ -134,10 +134,30 @@ public:
     size_(0)
   {}
 
+  List(const List& other):
+    List()
+  {
+    for (const T& val : other) {
+      pushBack(val);
+    }
+  }
+
+  List(List&& other):
+    List()
+  {
+    swap(other);
+  }
+
   ~List()
   {
     clear();
     delete sentinel_;
+  }
+
+  List& operator=(List other)
+  {
+    swap(other);
+    return *this;
   }
 
   iterator begin()
@@ -258,6 +278,12 @@ public:
     while (!empty()) {
       popFront();
     }
+  }
+
+  void swap(List& other) noexcept
+  {
+    std::swap(sentinel_, other.sentinel_);
+    std::swap(size_, other.size_);
   }
 
 private:
