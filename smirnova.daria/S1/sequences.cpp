@@ -145,12 +145,8 @@ void smirnova::printSums(const smirnova::Transposed& transposed)
     if (!first) {
       std::cout << ' ';
     }
-    try {
-      std::cout << computeSum(*it);
-    } catch (const std::overflow_error&) {
-      std::cerr << "error: overflow in sum calculation\n";
-      std::exit(1);
-    }
+    long long sum = computeSum(*it);
+    std::cout << sum;
     first = false;
   }
   std::cout << '\n';

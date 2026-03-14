@@ -5,16 +5,16 @@
 
 int main()
 {
-  const smirnova::Sequences seqs = smirnova::readSequences();
-
-  if (seqs.empty()) {
-    std::cout << 0 << '\n';
-    return 0;
-  }
-
-  smirnova::printNames(seqs);
-
   try {
+    const smirnova::Sequences seqs = smirnova::readSequences();
+
+    if (seqs.empty()) {
+      std::cout << 0 << '\n';
+      return 0;
+    }
+
+    smirnova::printNames(seqs);
+
     const smirnova::Transposed transposed = smirnova::buildTransposed(seqs);
 
     if (transposed.empty()) {
@@ -29,8 +29,11 @@ int main()
     }
 
     smirnova::printSums(transposed);
-  } catch (const std::overflow_error&) {
+  } catch (const std::overflow_error& e) {
     std::cerr << "error: overflow in sum calculation\n";
+    return 1;
+  } catch (const std::exception& e) {
+    std::cerr << "error: " << e.what() << '\n';
     return 1;
   }
 
