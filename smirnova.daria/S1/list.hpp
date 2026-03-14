@@ -179,6 +179,40 @@ public:
     return size_;
   }
 
+  iterator insert(iterator pos, T val)
+  {
+    detail::node_t< T >* newNode = new detail::node_t< T >(std::move(val));
+    detail::node_base_t* curr = pos.node_;
+    detail::node_base_t* prev = curr->prev_;
+    newNode->next_ = curr;
+    newNode->prev_ = prev;
+    prev->next_ = newNode;
+    curr->prev_ = newNode;
+    ++size_;
+    return iterator(newNode);
+  }
+
+  iterator erase(iterator pos)
+  {
+    if (pos == end()) {
+      throw std::runtime_error("erase() on end iterator");
+    }
+    detail::node_base_t* curr = pos.node_;
+    curr->prev_->next_ = curr->next_;
+    curr->next_->prev_ = curr->prev_;
+    detail::node_base_t* next = curr->next_;
+    delete static_cast< detail::node_t< T >* >(curr);
+    --size_;
+    return iterator(next);
+  }
+
+  void clear()
+  {
+    while (!empty()) {
+      popFront();
+    }
+  }
+
 private:
   detail::node_base_t* sentinel_;
   std::size_t size_;
