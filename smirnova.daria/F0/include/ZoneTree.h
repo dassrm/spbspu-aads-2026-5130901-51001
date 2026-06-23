@@ -1,23 +1,35 @@
 #pragma once
-#include <stack>
-#include <vector>
 #include <string>
-#include "types.h"
+#include <vector>
+#include <set>
+#include <memory>
 
-class Truck {
-    std::stack<Order>        cargo;
-    std::vector<std::string> route;
-    int currentStop = 0;
+struct ZoneNode {
+    std::string name;
+    std::vector<std::shared_ptr<ZoneNode>> children;
+    explicit ZoneNode(const std::string& n) : name(n) {}
+};
+
+class ZoneTree {
+    std::shared_ptr<ZoneNode> root;
+
+    std::shared_ptr<ZoneNode> findNode(std::shared_ptr<ZoneNode> node, const std::string& name) const;
+
+    void dfs(std::shared_ptr<ZoneNode> node,
+             const std::set<std::string>& targets,
+             std::vector<std::string>& result) const;
+
+    void printNode(std::shared_ptr<ZoneNode> node,
+                   const std::string& prefix,
+                   bool isLast,
+                   const std::set<std::string>& activeZones) const;
 
 public:
-    void setRoute(const std::vector<std::string>& r);
+    bool addZone(const std::string& parentName, const std::string& zoneName);
 
-    bool routeReady() const;
-    bool empty()      const;
+    bool exists(const std::string& name) const;
 
-    void push(const Order& order);
+    std::vector<std::string> planRoute(const std::set<std::string>& targets) const;
 
-    bool deliver();
-
-    void print() const;
+    void printMap(const std::set<std::string>& activeZones) const;
 };

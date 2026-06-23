@@ -1,23 +1,18 @@
 #pragma once
-#include <stack>
-#include <vector>
 #include <string>
+#include <list>
 #include "types.h"
 
-class Truck {
-    std::stack<Order>        cargo;
-    std::vector<std::string> route;
-    int currentStop = 0;
+class HashTable {
+    static const int CAPACITY = 64;
+    std::list<Client> buckets[CAPACITY];
+
+    int hash(const std::string& key) const;
 
 public:
-    void setRoute(const std::vector<std::string>& r);
+    bool insert(const std::string& phone, const std::string& name, const std::string& zone);
 
-    bool routeReady() const;
-    bool empty()      const;
+    bool remove(const std::string& phone);
 
-    void push(const Order& order);
-
-    bool deliver();
-
-    void print() const;
+    Client* find(const std::string& phone);
 };

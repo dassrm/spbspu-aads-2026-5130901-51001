@@ -1,23 +1,25 @@
 #pragma once
-#include <stack>
-#include <vector>
+#include <queue>
+#include <set>
+#include <map>
 #include <string>
 #include "types.h"
 
-class Truck {
-    std::stack<Order>        cargo;
-    std::vector<std::string> route;
-    int currentStop = 0;
+class OrderQueue {
+    std::queue<Order> q;
 
 public:
-    void setRoute(const std::vector<std::string>& r);
+    void enqueue(const Order& order);
+    bool dequeue(Order& out);
 
-    bool routeReady() const;
-    bool empty()      const;
+    bool empty() const;
+    int  size()  const;
 
-    void push(const Order& order);
+    bool hasOrdersForPhone(const std::string& phone) const;
 
-    bool deliver();
+    std::set<std::string> activeZones() const;
+
+    std::map<std::string, int> countPerZone() const;
 
     void print() const;
 };
