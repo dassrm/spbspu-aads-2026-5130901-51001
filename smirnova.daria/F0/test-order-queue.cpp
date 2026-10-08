@@ -45,8 +45,8 @@ BOOST_AUTO_TEST_CASE(count_per_zone)
   queue.enqueue({"Item3", "333", "Sidorov", "South"});
 
   auto counts = queue.countPerZone();
-  BOOST_CHECK_EQUAL(counts.find("North")->second, 2);
-  BOOST_CHECK_EQUAL(counts.find("South")->second, 1);
+  BOOST_CHECK_EQUAL(counts.find("North")->second, 2u);
+  BOOST_CHECK_EQUAL(counts.find("South")->second, 1u);
   BOOST_CHECK(counts.find("East") == counts.end());
 }
 

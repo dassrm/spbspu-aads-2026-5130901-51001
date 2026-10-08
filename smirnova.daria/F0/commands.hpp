@@ -30,9 +30,6 @@ namespace smirnova {
 
   using CommandHandler = void (*)(std::istream& in, std::ostream& out, AppState& state);
 
-  // Reads commands from "in", one token at a time, until the stream is
-  // exhausted, writing every response to "out". Unknown commands or bad
-  // input print "<INVALID COMMAND...>"; nothing ever throws out of here.
   void runSession(std::istream& in, std::ostream& out);
 
 }

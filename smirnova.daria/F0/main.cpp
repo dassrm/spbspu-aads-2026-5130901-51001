@@ -2,7 +2,8 @@
 
 #include "commands.hpp"
 
-int main() {
+int main()
+{
   smirnova::runSession(std::cin, std::cout);
   return 0;
 }

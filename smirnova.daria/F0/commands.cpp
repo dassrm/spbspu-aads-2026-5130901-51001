@@ -1,6 +1,7 @@
 #include "commands.hpp"
 
 #include <iomanip>
+#include <memory>
 #include <set>
 #include <stdexcept>
 
@@ -8,22 +9,22 @@ namespace smirnova {
 
   namespace {
 
-    // Thrown by a handler whenever a command cannot be carried out; caught
-    // once, in executeCommand, and reported as "<INVALID COMMAND: ...>".
-    class CommandError : public std::runtime_error {
+    class CommandError: public std::runtime_error {
     public:
       explicit CommandError(const std::string& message):
         std::runtime_error(message)
       {}
     };
 
-    void requireGoodStream(std::istream& in) {
+    void requireGoodStream(std::istream& in)
+    {
       if (!in) {
         throw CommandError("MALFORMED COMMAND");
       }
     }
 
-    void handleRegClient(std::istream& in, std::ostream& out, AppState& state) {
+    void handleRegClient(std::istream& in, std::ostream& out, AppState& state)
+    {
       std::string phone;
       std::string name;
       std::string zone;
@@ -40,13 +41,13 @@ namespace smirnova {
       out << "<OK: CLIENT " << name << " REGISTERED IN ZONE " << zone << ">\n";
     }
 
-    void handleDropClient(std::istream& in, std::ostream& out, AppState& state) {
+    void handleDropClient(std::istream& in, std::ostream& out, AppState& state)
+    {
       std::string phone;
       in >> phone;
       requireGoodStream(in);
 
-      auto client = state.clients.find(phone);
-      if (client == state.clients.end()) {
+      if (state.clients.find(phone) == state.clients.end()) {
         throw CommandError("CLIENT " + phone + " NOT FOUND");
       }
       if (state.orders.hasOrdersForPhone(phone)) {
@@ -56,7 +57,8 @@ namespace smirnova {
       out << "<OK: CLIENT " << phone << " REMOVED>\n";
     }
 
-    void handleAddWarehouse(std::istream& in, std::ostream& out, AppState& state) {
+    void handleAddWarehouse(std::istream& in, std::ostream& out, AppState& state)
+    {
       std::string name;
       in >> std::quoted(name);
       requireGoodStream(in);
@@ -71,7 +73,8 @@ namespace smirnova {
       out << "<OK: ZONE " << name << " ADDED AS WAREHOUSE>\n";
     }
 
-    void handleAddZone(std::istream& in, std::ostream& out, AppState& state) {
+    void handleAddZone(std::istream& in, std::ostream& out, AppState& state)
+    {
       std::string parent;
       std::string name;
       in >> std::quoted(parent) >> std::quoted(name);
@@ -87,7 +90,8 @@ namespace smirnova {
       out << "<OK: ZONE " << name << " ADDED UNDER " << parent << ">\n";
     }
 
-    void handleOrder(std::istream& in, std::ostream& out, AppState& state) {
+    void handleOrder(std::istream& in, std::ostream& out, AppState& state)
+    {
       std::string phone;
       std::string item;
       in >> phone >> std::quoted(item);
@@ -99,12 +103,14 @@ namespace smirnova {
       }
       Order order{item, phone, client->second.name, client->second.zone};
       state.orders.enqueue(order);
-      out << "<ADDED TO QUEUE: " << item << " → " << order.zone << " (" << order.clientName << ")>\n";
+      out << "<ADDED TO QUEUE: " << item << " → " << order.zone;
+      out << " (" << order.clientName << ")>\n";
     }
 
-    int totalItemsOnRoute(const std::vector< std::string >& route,
-                           HashTable< std::string, int, StringHash >& counts) {
-      int total = 0;
+    std::size_t totalItemsOnRoute(const std::vector< std::string >& route,
+      HashTable< std::string, std::size_t, StringHash >& counts)
+    {
+      std::size_t total = 0;
       for (const std::string& zone : route) {
         auto found = counts.find(zone);
         if (found != counts.end()) {
@@ -114,7 +120,8 @@ namespace smirnova {
       return total;
     }
 
-    void handlePlanRoute(std::istream&, std::ostream& out, AppState& state) {
+    void handlePlanRoute(std::istream&, std::ostream& out, AppState& state)
+    {
       if (state.orders.empty()) {
         throw CommandError("QUEUE IS EMPTY");
       }
@@ -128,8 +135,8 @@ namespace smirnova {
       state.plannedRoute = route;
       state.routePlanned = true;
 
-      HashTable< std::string, int, StringHash > counts = state.orders.countPerZone();
-      int total = totalItemsOnRoute(route, counts);
+      HashTable< std::string, std::size_t, StringHash > counts = state.orders.countPerZone();
+      std::size_t total = totalItemsOnRoute(route, counts);
       std::string depot = state.zones.rootName();
 
       out << "<ROUTE PLANNED: " << depot;
@@ -140,37 +147,39 @@ namespace smirnova {
       out << "<STOPS: " << route.size() << ", TOTAL ITEMS: " << total << ">\n";
     }
 
-    void handleLoadTruck(std::istream&, std::ostream& out, AppState& state) {
+    void loadCargoForRoute(AppState& state, std::vector< Order >& loaded)
+    {
+      for (auto stop = state.plannedRoute.rbegin(); stop != state.plannedRoute.rend(); ++stop) {
+        std::vector< Order > zoneOrders = state.orders.extractByZone(*stop);
+        for (auto order = zoneOrders.rbegin(); order != zoneOrders.rend(); ++order) {
+          loaded.push_back(*order);
+          state.truck.push(*order);
+        }
+      }
+    }
+
+    void handleLoadTruck(std::istream&, std::ostream& out, AppState& state)
+    {
       if (!state.routePlanned) {
         throw CommandError("ROUTE NOT PLANNED");
       }
 
       state.truck.setRoute(state.plannedRoute, state.zones.rootName());
 
-      // Visit stops in reverse and, within a stop, orders in reverse
-      // arrival order, so that pushing them one by one leaves the first
-      // stop's earliest order on top of the stack.
-      std::vector< Order > pushOrder;
-      for (auto stop = state.plannedRoute.rbegin(); stop != state.plannedRoute.rend(); ++stop) {
-        std::vector< Order > zoneOrders = state.orders.extractByZone(*stop);
-        for (auto order = zoneOrders.rbegin(); order != zoneOrders.rend(); ++order) {
-          pushOrder.push_back(*order);
-        }
-      }
-      for (const Order& order : pushOrder) {
-        state.truck.push(order);
-      }
+      std::vector< Order > loaded;
+      loadCargoForRoute(state, loaded);
       state.routePlanned = false;
 
-      out << "<TRUCK LOADED: " << pushOrder.size() << " items>\n";
+      out << "<TRUCK LOADED: " << loaded.size() << " items>\n";
       out << "<STACK top→bottom:";
-      for (auto order = pushOrder.rbegin(); order != pushOrder.rend(); ++order) {
+      for (auto order = loaded.rbegin(); order != loaded.rend(); ++order) {
         out << " [" << order->item << "/" << order->zone << "]";
       }
       out << ">\n";
     }
 
-    void handleNextStop(std::istream&, std::ostream& out, AppState& state) {
+    void handleNextStop(std::istream&, std::ostream& out, AppState& state)
+    {
       if (state.truck.empty()) {
         throw CommandError("TRUCK IS EMPTY");
       }
@@ -179,37 +188,42 @@ namespace smirnova {
       }
     }
 
-    void handleShowTruck(std::istream&, std::ostream& out, AppState& state) {
+    void handleShowTruck(std::istream&, std::ostream& out, AppState& state)
+    {
       state.truck.print(out);
     }
 
-    void handleShowQueue(std::istream&, std::ostream& out, AppState& state) {
+    void handleShowQueue(std::istream&, std::ostream& out, AppState& state)
+    {
       state.orders.print(out);
     }
 
-    void handleShowMap(std::istream&, std::ostream& out, AppState& state) {
+    void handleShowMap(std::istream&, std::ostream& out, AppState& state)
+    {
       state.zones.printMap(state.orders.activeZones(), out);
     }
 
-    HashTable< std::string, CommandHandler, StringHash > buildDispatchTable() {
+    HashTable< std::string, CommandHandler, StringHash > buildDispatchTable()
+    {
       HashTable< std::string, CommandHandler, StringHash > table;
-      table.insert("reg-client", &handleRegClient);
-      table.insert("drop-client", &handleDropClient);
-      table.insert("add-warehouse", &handleAddWarehouse);
-      table.insert("add-zone", &handleAddZone);
-      table.insert("order", &handleOrder);
-      table.insert("plan-route", &handlePlanRoute);
-      table.insert("load-truck", &handleLoadTruck);
-      table.insert("next-stop", &handleNextStop);
-      table.insert("show-truck", &handleShowTruck);
-      table.insert("show-queue", &handleShowQueue);
-      table.insert("show-map", &handleShowMap);
+      table.insert("reg-client", std::addressof(handleRegClient));
+      table.insert("drop-client", std::addressof(handleDropClient));
+      table.insert("add-warehouse", std::addressof(handleAddWarehouse));
+      table.insert("add-zone", std::addressof(handleAddZone));
+      table.insert("order", std::addressof(handleOrder));
+      table.insert("plan-route", std::addressof(handlePlanRoute));
+      table.insert("load-truck", std::addressof(handleLoadTruck));
+      table.insert("next-stop", std::addressof(handleNextStop));
+      table.insert("show-truck", std::addressof(handleShowTruck));
+      table.insert("show-queue", std::addressof(handleShowQueue));
+      table.insert("show-map", std::addressof(handleShowMap));
       return table;
     }
 
   }
 
-  void runSession(std::istream& in, std::ostream& out) {
+  void runSession(std::istream& in, std::ostream& out)
+  {
     AppState state;
     HashTable< std::string, CommandHandler, StringHash > dispatch = buildDispatchTable();
 

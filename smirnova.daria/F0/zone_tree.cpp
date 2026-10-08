@@ -2,15 +2,16 @@
 
 namespace smirnova {
 
-  ZoneNode* ZoneTree::findNode(ZoneNode* node, const std::string& name) const {
+  const ZoneNode* ZoneTree::findNode(const ZoneNode* node, const std::string& name) const
+  {
     if (node == nullptr) {
       return nullptr;
     }
     if (node->name == name) {
       return node;
     }
-    for (auto& child : node->children) {
-      ZoneNode* found = findNode(child.get(), name);
+    for (const std::unique_ptr< ZoneNode >& child : node->children) {
+      const ZoneNode* found = findNode(child.get(), name);
       if (found != nullptr) {
         return found;
       }
@@ -18,7 +19,14 @@ namespace smirnova {
     return nullptr;
   }
 
-  ZoneAddResult ZoneTree::addZone(const std::string& parentName, const std::string& zoneName) {
+  ZoneNode* ZoneTree::findNode(ZoneNode* node, const std::string& name)
+  {
+    const ZoneTree& self = *this;
+    return const_cast< ZoneNode* >(self.findNode(node, name));
+  }
+
+  ZoneAddResult ZoneTree::addZone(const std::string& parentName, const std::string& zoneName)
+  {
     if (findNode(root_.get(), zoneName) != nullptr) {
       return ZoneAddResult::ZoneAlreadyExists;
     }
@@ -27,7 +35,7 @@ namespace smirnova {
       if (root_ != nullptr) {
         return ZoneAddResult::RootAlreadyExists;
       }
-      root_.reset(new ZoneNode(zoneName));
+      root_ = std::unique_ptr< ZoneNode >(new ZoneNode(zoneName));
       return ZoneAddResult::Added;
     }
 
@@ -39,43 +47,48 @@ namespace smirnova {
     return ZoneAddResult::Added;
   }
 
-  bool ZoneTree::exists(const std::string& name) const {
+  bool ZoneTree::exists(const std::string& name) const
+  {
     return findNode(root_.get(), name) != nullptr;
   }
 
-  bool ZoneTree::hasRoot() const {
+  bool ZoneTree::hasRoot() const
+  {
     return root_ != nullptr;
   }
 
-  std::string ZoneTree::rootName() const {
-    return root_ != nullptr ? root_->name : std::string();
+  std::string ZoneTree::rootName() const
+  {
+    if (root_ == nullptr) {
+      return std::string();
+    }
+    return root_->name;
   }
 
-  void ZoneTree::collectRoute(const ZoneNode* node, const std::set< std::string >& targets,
-                               std::vector< std::string >& result) const {
+  void ZoneTree::collectTargetsPreOrder(const ZoneNode* node,
+    const std::set< std::string >& targets, std::vector< std::string >& result) const
+  {
     if (node == nullptr) {
       return;
     }
     if (targets.count(node->name) != 0) {
       result.push_back(node->name);
     }
-    for (const auto& child : node->children) {
-      collectRoute(child.get(), targets, result);
+    for (const std::unique_ptr< ZoneNode >& child : node->children) {
+      collectTargetsPreOrder(child.get(), targets, result);
     }
   }
 
-  std::vector< std::string > ZoneTree::planRoute(const std::set< std::string >& targets) const {
+  std::vector< std::string > ZoneTree::planRoute(const std::set< std::string >& targets) const
+  {
     std::vector< std::string > result;
-    collectRoute(root_.get(), targets, result);
+    collectTargetsPreOrder(root_.get(), targets, result);
     return result;
   }
 
-  // Prints every child of "node", each on its own line prefixed with the
-  // usual "├── " / "└── " connectors, then recurses so that "prefix"
-  // always reflects exactly the ancestor continuation bars ("│   ") or
-  // blanks ("    ") needed at this depth.
-  void ZoneTree::printChildren(const ZoneNode* node, const std::string& prefix,
-                                const std::set< std::string >& activeZones, std::ostream& out) const {
+  void ZoneTree::printSubtree(const ZoneNode* node, const std::string& prefix,
+    const std::set< std::string >& activeZones, std::ostream& out) const
+  {
     for (std::size_t i = 0; i < node->children.size(); ++i) {
       const ZoneNode* child = node->children[i].get();
       bool isLast = (i + 1 == node->children.size());
@@ -86,11 +99,12 @@ namespace smirnova {
       }
       out << "\n";
 
-      printChildren(child, prefix + (isLast ? "    " : "│   "), activeZones, out);
+      printSubtree(child, prefix + (isLast ? "    " : "│   "), activeZones, out);
     }
   }
 
-  void ZoneTree::printMap(const std::set< std::string >& activeZones, std::ostream& out) const {
+  void ZoneTree::printMap(const std::set< std::string >& activeZones, std::ostream& out) const
+  {
     if (root_ == nullptr) {
       out << "<MAP IS EMPTY>\n";
       return;
@@ -102,7 +116,7 @@ namespace smirnova {
     }
     out << "\n";
 
-    printChildren(root_.get(), "", activeZones, out);
+    printSubtree(root_.get(), "", activeZones, out);
     if (!activeZones.empty()) {
       out << "* — есть заказы\n";
     }

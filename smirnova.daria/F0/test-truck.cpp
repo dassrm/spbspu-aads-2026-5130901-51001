@@ -31,8 +31,9 @@ BOOST_AUTO_TEST_CASE(loaded_truck_shows_position_and_route)
   std::ostringstream out;
   truck.print(out);
   std::string text = out.str();
+  std::string expectedRoute = "<ROUTE: Warehouse → North → East → Warehouse>";
   BOOST_CHECK(text.find("<TRUCK POSITION: Warehouse>") != std::string::npos);
-  BOOST_CHECK(text.find("<ROUTE: Warehouse → North → East → Warehouse>") != std::string::npos);
+  BOOST_CHECK(text.find(expectedRoute) != std::string::npos);
   BOOST_CHECK(text.find("1. Fridge") != std::string::npos);
 }
 
